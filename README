@@ -1,12 +1,12 @@
 The JXBee project helps Java programmers access Digi(TM) XBee(TM) devices.
 
 The JXBeeLib portion of the code is a Java library providing:
-- Java representations of the definitions and models used in the basis of Digi's XBee family of products.
-- Classes meant to make it easy for a Java programmer to establish and manage a connection to an XBee device and communicate with it.
+- Java representations of the definitions and models used in Digi's XBee family of products.
+- Classes meant to make it easy for a Java programmer to establish and manage a connection to an XBee device.
 
 The JXBeeTool portion of the code is a Java application providing convenient command-line access to XBee devices. It borrows from the style of other common *NIX tools such as wget and svn. With a simple command line you can send data to an XBee device or pull information from it.
 
-Right now, JXBee is limited to communicating over TCP/IP to the Wi-Fi(TM) family of XBee modules. The TCP/IP connection was implemented first because it doesn't require any hardware to communicate with the XBee module beyond the ubiquitous Wi-Fi connection. The other families of XBee modules all communicate with computers via serial cable and use various wireless protocols to talk to each other.
+Right now, JXBee is limited to communicating with the Wi-Fi(TM) family of XBee modules. Most of the families of XBee modules require your computer, a serial cable to one XBee module, and another XBee module that you actually want to talk to wirelessly. Wi-Fi is much simpler because your computer already has a compatible network. You don't need to buy two XBee modules, just one.
 
 Also, the library only works correctly with one connection at a time. Packet routing and queuing isn't implemented, but there is a place for it.  
 
