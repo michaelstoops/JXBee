@@ -1,6 +1,7 @@
 package com.stoopsartsunlimited.jxbeelib;
 
 import java.net.Inet4Address;
+import java.nio.ByteBuffer;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -10,6 +11,7 @@ import com.stoopsartsunlimited.jxbeelib.ip.CommandRequestPacket;
 import com.stoopsartsunlimited.jxbeelib.ip.CommandResponsePacket;
 import com.stoopsartsunlimited.jxbeelib.ip.CommandResponsePacket.Status;
 import com.stoopsartsunlimited.jxbeelib.ip.Packet;
+import com.stoopsartsunlimited.jxbeelib.ip.SerialDataPacket;
 import com.stoopsartsunlimited.jxbeelib.ip.XBeeIPConnection;
 
 /**
@@ -104,6 +106,59 @@ public class XBeeClient {
 	}
 	
 	
+	/**
+	 * Sends data to the XBee module, asking that the module send the data out its serial port. This
+	 * method doesn't do any acknowledgment or flow control. If you overflow the XBee's buffer, it
+	 * will drop packets.
+	 * 
+	 * @throws XBeeException 
+	 */
+	public void sendSerialData(byte[] data) throws XBeeException {
+		sendSerialData(data, 0, data.length);
+	}
+	
+	/**
+	 * Sends data to the XBee module, asking that the module send the data out its serial port. This
+	 * method doesn't do any acknowledgment or flow control. If you overflow the XBee's buffer, it
+	 * will drop packets.
+	 * 
+	 * @throws XBeeException 
+	 */
+	public void sendSerialData(byte[] data, int offset, int length) throws XBeeException {
+		// check some prerequisites
+		
+		// ask the xbee module what port it's listening on
+		/*
+		if (!sendCommandAndWait(ATCommands.SERIAL_COMM_SERVICE_PORT, true, null)) {
+			throw new XBeeException("Unable to connect with XBee module at " + connection.getRemoteAddress());
+		}
+		int remoteDataPort = (Integer)ATCommandHelper.getParameterObject(ATCommands.SERIAL_COMM_SERVICE_PORT, getState(ATCommands.SERIAL_COMM_SERVICE_PORT));
+		connection.setRemoteDataPort(remoteDataPort);
+		*/
+		// for now, always use the default port.
+
+		// ask the xbee module how much data it can handle in one packet
+		/*
+		if (!sendCommandAndWait(ATCommands.MAX_RF_PAYLOAD_BYTES, true, null)) {
+			throw new XBeeException("Unable to connect with XBee module at " + connection.getRemoteAddress());
+		}
+		int maxBytesPerPacket = (Integer)ATCommandHelper.getParameterObject(ATCommands.MAX_RF_PAYLOAD_BYTES, getState(ATCommands.MAX_RF_PAYLOAD_BYTES));
+		*/
+		// not sure if this parameter applies to this operation, so I'll just assume the documentation is correct. It says you can send 1398 serial bytes per packet.
+		int maxBytesPerPacket = 1398;
+		
+		// send the data, one packet at a time
+		ByteBuffer buffer = ByteBuffer.wrap(data, offset, length);
+		while (buffer.remaining() > 0) {
+			byte[] bytesThisPacket = new byte[Math.min(buffer.remaining(), maxBytesPerPacket)];
+			buffer.get(bytesThisPacket);
+			SerialDataPacket packet = new SerialDataPacket();
+			packet.setSerialData(bytesThisPacket);
+			connection.sendPacket(packet);
+		}
+	}
+
+	
 	protected Map<String, byte[]> stateMap = new HashMap<String, byte[]>();
 	
 	/**
@@ -175,4 +230,5 @@ public class XBeeClient {
 	public void setReadTimeout(int timeout) {
 		connection.setTimeout(timeout);
 	}
+
 }

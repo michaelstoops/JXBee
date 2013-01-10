@@ -8,7 +8,7 @@ import com.stoopsartsunlimited.jxbeelib.XBeeException;
 /**
  * Represents a packet that sends a command to an XBee module over TCP/IP.
  * 
- * You should probably treat this object as immutable.
+ * You should probably treat this object as immutable. Doesn't offer setters.
  * 
  * @author Michael
  *

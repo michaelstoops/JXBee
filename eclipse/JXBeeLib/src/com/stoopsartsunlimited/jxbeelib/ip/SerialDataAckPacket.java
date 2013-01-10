@@ -7,6 +7,8 @@ import com.stoopsartsunlimited.jxbeelib.XBeeException;
 /**
  * Represents a packet that an XBee module sends to say that it received your serial data.
  * 
+ * Not tested.
+
  * @author Michael
  *
  */
@@ -27,10 +29,14 @@ public class SerialDataAckPacket extends Packet {
 		packetBytes = Arrays.copyOfRange(networkData, 0, networkData.length);
 	}
 
+	public PacketCommands getCommand() {
+		return commandByteToEnum(packetBytes[0]);
+	}
+	
 	@Override
 	public byte[] getBytes() {
-		// TODO Auto-generated method stub
-		return null;
+		return packetBytes;
 	}
+
 
 }

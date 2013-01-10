@@ -11,6 +11,8 @@ public class JXBeeTool {
 			"  " + JXBeeTool.programName + " COMMAND PARAMS\n" +
 			"COMMAND:\n" +
 			"  " + GetCommand.toolName + "       asks an XBee device for information\n" +
+			"  " + SendCommand.toolName + "       sends a command to an XBee device\n" +
+			"  " + SerialCommand.toolName + "       asks an XBee device to send data out its serial port\n" +
 			"PARAMS:\n" +
 			"  varies by the COMMAND used. Call a command with PARAMS=\"-h\" for help on that command.";
 
@@ -29,11 +31,14 @@ public class JXBeeTool {
 			} else if (arg.equals(SendCommand.toolName)) {
 				SendCommand.main(toolArgs);
 				return;
+			} else if (arg.equals(SerialCommand.toolName)) {
+				SerialCommand.main(toolArgs);
+				return;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-				
+		
 	}
 
 }

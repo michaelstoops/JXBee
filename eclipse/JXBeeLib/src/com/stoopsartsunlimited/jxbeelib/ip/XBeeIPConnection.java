@@ -1,6 +1,7 @@
 package com.stoopsartsunlimited.jxbeelib.ip;
 
 import java.net.Inet4Address;
+import java.net.SocketException;
 
 import com.stoopsartsunlimited.jxbeelib.XBeeException;
 
@@ -89,6 +90,23 @@ public class XBeeIPConnection {
 	}
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
+	}
+
+	protected boolean serialReadChannelOpen = false;
+
+	/**
+	 * @return the serialReadChannelOpen
+	 */
+	public boolean isSerialReadChannelOpen() {
+		return serialReadChannelOpen;
+	}
+	public void openSerialReadChannel() throws SocketException {
+		concentrator.openSerialReadChannel(this);
+		serialReadChannelOpen = true;
+	}
+	public void closeSerialReadChannel() {
+		serialReadChannelOpen = false;
+		concentrator.closeSerialReadChannel(this);
 	}
 
 }

@@ -10,15 +10,15 @@ import com.stoopsartsunlimited.jxbeelib.XBeeException;
  */
 public class RawPacket extends Packet {
 
+	protected byte[] packetBytes = null;
+
 	public RawPacket(byte[] networkData, int length) throws XBeeException {
 		super(networkData, length);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
 	public byte[] getBytes() {
-		// TODO Auto-generated method stub
-		return null;
+		return packetBytes;
 	}
 
 }

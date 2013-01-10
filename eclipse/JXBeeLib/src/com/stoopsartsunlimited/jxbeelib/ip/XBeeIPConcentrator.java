@@ -62,16 +62,16 @@ public final class XBeeIPConcentrator {
 	
 	private Map<InetAddress, XBeeIPConnection> connections = new HashMap<InetAddress, XBeeIPConnection>();
 	//private LinkedList<Packet> packetQueue = new LinkedList<Packet>();
-	private DatagramSocket socket = null;
+	private DatagramSocket controlSocket = null;
 	
-	private DatagramSocket getSocket() throws SocketException {
-		if (socket == null
-			|| socket.isClosed()) {
-			socket = new DatagramSocket(0xBEE);
+	private DatagramSocket getControlSocket() throws SocketException {
+		if (controlSocket == null
+			|| controlSocket.isClosed()) {
+			controlSocket = new DatagramSocket(0xBEE);
 			// don't wait around
-			socket.setSoTimeout(1);
+			controlSocket.setSoTimeout(1);
 		}
-		return socket;
+		return controlSocket;
 	}
 	
 	/**
@@ -83,7 +83,7 @@ public final class XBeeIPConcentrator {
 	public void registerConnection(XBeeIPConnection connection) throws XBeeException {
 		// make sure that there is a socket open now, so that we won't get surprised later if it isn't available.
 		try {
-			getSocket();
+			getControlSocket();
 		} catch (SocketException e) {
 			throw new XBeeException("Unable to create socket at the local UDP port 0xBEE. Likely there is already a socket listening on that port.", e);
 		}
@@ -110,27 +110,25 @@ public final class XBeeIPConcentrator {
 	/**
 	 * Forcibly closes a connection. If it's already closed, leaves it closed without error.
 	 * 
-	 * Actually just deregisters the connection.
-	 * 
 	 * @param connection
 	 */
 	public void closeConnection(XBeeIPConnection connection) {
 		connections.remove(connection.getRemoteAddress());
 		if (connections.size() == 0) {
 			// release the socket
-			socket.close();
-			socket = null;
+			controlSocket.close();
+			controlSocket = null;
 		}
 	}
 
 	// TODO: filter packets by connection
 	public Packet getPacket(XBeeIPConnection xBeeIPConnection, int timeout) {
-		int oldTimeout = 60000; // default to 1 min
+		int oldTimeout = 1; // default to 1 ms
 		try {
 			DatagramPacket datagramPacket = new DatagramPacket(new byte[2048], 2048);
-			oldTimeout = socket.getSoTimeout();
-			socket.setSoTimeout(timeout);
-			socket.receive(datagramPacket);
+			oldTimeout = controlSocket.getSoTimeout();
+			controlSocket.setSoTimeout(timeout);
+			controlSocket.receive(datagramPacket);
 			Packet xbeePacket = PacketFactory.getPacketFromNetworkBytes(datagramPacket.getData(), datagramPacket.getOffset(), datagramPacket.getLength());
 			return xbeePacket;
 		} catch (Exception e) {
@@ -138,7 +136,7 @@ public final class XBeeIPConcentrator {
 			return null;
 		} finally {
 			try {
-				socket.setSoTimeout(oldTimeout);
+				controlSocket.setSoTimeout(oldTimeout);
 			} catch (Exception e) {
 				// ignore
 			}
@@ -154,14 +152,25 @@ public final class XBeeIPConcentrator {
 		// bring in any new packets
 		//processIncomingPackets();
 		
-		LinkedList<Packet> r = new LinkedList<Packet>();
+		LinkedList<Packet> incomingPackets = new LinkedList<Packet>();
+		// read all packet from the control socket
 		try {
 			while (true) {
 				DatagramPacket datagramPacket = new DatagramPacket(new byte[2048], 2048);
-				socket.receive(datagramPacket);
-				// TODO: Create an XBee packet from this datagram packet
+				controlSocket.receive(datagramPacket);
 				Packet xbeePacket = PacketFactory.getPacketFromNetworkBytes(datagramPacket.getData(), datagramPacket.getOffset(), datagramPacket.getLength());
-				r.add(xbeePacket);
+				incomingPackets.add(xbeePacket);
+			}
+		} catch (Exception e) {
+			// stop receiving packets when there is a timeout exception
+		}
+		// read all packet from the serial socket
+		try {
+			while (true) {
+				DatagramPacket datagramPacket = new DatagramPacket(new byte[2048], 2048);
+				serialSocket.receive(datagramPacket);
+				Packet xbeePacket = PacketFactory.getPacketFromNetworkBytes(datagramPacket.getData(), datagramPacket.getOffset(), datagramPacket.getLength());
+				incomingPackets.add(xbeePacket);
 			}
 		} catch (Exception e) {
 			// stop receiving packets when there is a timeout exception
@@ -172,13 +181,13 @@ public final class XBeeIPConcentrator {
 
 		// return all the packets
 		// TODO: filter the packets by connection
-		return (Packet[])r.toArray();
+		return (Packet[])incomingPackets.toArray();
 	}
 	
 	/**
 	 * The maximum number of packets to cache. Set to a liberally large number, assuming resources are bountiful.
 	 */
-	//private int packetQueueLimit = 1000;
+	//private int packetQueueLimit = 16384;
 	/**
 	 * Removes expired items from the caches/queues.
 	 */
@@ -233,9 +242,42 @@ public final class XBeeIPConcentrator {
 		
 		DatagramPacket p = new DatagramPacket(packetBytes, packetBytes.length, connection.remoteAddress, remotePort);
 		try {
-			getSocket().send(p);
+			getControlSocket().send(p);
 		} catch (IOException e) {
 			throw new XBeeException(String.format("Error while sending packet %s to %s:%d", packet.toString(), connection.remoteAddress.toString(), remotePort), e);
 		}
+	}
+
+	
+	// serial IO
+	private DatagramSocket serialSocket = null;
+	
+	private DatagramSocket getSerialSocket() throws SocketException {
+		if (serialSocket == null
+			|| serialSocket.isClosed()) {
+			serialSocket = new DatagramSocket(0x2616);
+			// don't wait around
+			serialSocket.setSoTimeout(1);
+		}
+		return serialSocket;
+	}
+	
+	
+	public void openSerialReadChannel(XBeeIPConnection xBeeIPConnection) throws SocketException {
+		// open the serial socket
+		getSerialSocket();
+	}
+
+	public void closeSerialReadChannel(XBeeIPConnection xBeeIPConnection) {
+		// closes the serial socket only if there are no readers
+		for (XBeeIPConnection connection : connections.values()) {
+			if (connection.isSerialReadChannelOpen()) {
+				// somebody is using the socket, don't actually close it
+				return;
+			}
+		}
+		// nobody is using the socket, close it.
+		serialSocket.close();
+		
 	}
 }
