@@ -61,7 +61,13 @@ public final class XBeeIPConcentrator {
 	}
 	
 	private Map<InetAddress, XBeeIPConnection> connections = new HashMap<InetAddress, XBeeIPConnection>();
-	//private LinkedList<Packet> packetQueue = new LinkedList<Packet>();
+
+	/**
+	 * The maximum number of packets to cache. Set to a liberally large number, assuming resources are bountiful.
+	 */
+	private int packetQueueLimit = 1024;
+	private HashMap<InetAddress, LinkedList<Packet>> incomingPacketQueues = new HashMap<InetAddress, LinkedList<Packet>>();
+
 	private DatagramSocket controlSocket = null;
 	
 	private DatagramSocket getControlSocket() throws SocketException {
@@ -95,6 +101,8 @@ public final class XBeeIPConcentrator {
 
 		// register the connection
 		connections.put(connection.getRemoteAddress(), connection);
+		// create queue for this connection
+		incomingPacketQueues.put(connection.getRemoteAddress(), new LinkedList<Packet>());
 	}
 	
 	/**
@@ -119,103 +127,96 @@ public final class XBeeIPConcentrator {
 			controlSocket.close();
 			controlSocket = null;
 		}
+		// remove the queue for this connection
+		incomingPacketQueues.remove(connection.getRemoteAddress());
 	}
 
-	// TODO: filter packets by connection
-	public Packet getPacket(XBeeIPConnection xBeeIPConnection, int timeout) {
-		int oldTimeout = 1; // default to 1 ms
-		try {
-			DatagramPacket datagramPacket = new DatagramPacket(new byte[2048], 2048);
-			oldTimeout = controlSocket.getSoTimeout();
-			controlSocket.setSoTimeout(timeout);
-			controlSocket.receive(datagramPacket);
-			Packet xbeePacket = PacketFactory.getPacketFromNetworkBytes(datagramPacket.getData(), datagramPacket.getOffset(), datagramPacket.getLength());
-			return xbeePacket;
-		} catch (Exception e) {
-			// if there's an exception, just drop the packet and return null
+	/**
+	 * Gets the next packet for this connection. Returns null if none are available. 
+	 * @param xBeeIPConnection
+	 * @param timeout
+	 * @return
+	 */
+	public Packet getPacket(XBeeIPConnection connection, int timeout) {
+		Packet packets[] = getPackets(connection, 1);
+		if (packets.length == 0) {
 			return null;
-		} finally {
-			try {
-				controlSocket.setSoTimeout(oldTimeout);
-			} catch (Exception e) {
-				// ignore
-			}
 		}
+		return packets[0];
 	}
 	
 	/**
-	 * Gets all queued packets for the supplied connection. First received is first in the array.  
+	 * Gets all queued packets for the supplied connection. First received is first in the array.
 	 * @param connection
-	 * @return
+	 * @return Returns an empty array if no packets are available.
 	 */
-	public Packet[] getPackets(XBeeIPConnection connection) {
-		// bring in any new packets
-		//processIncomingPackets();
+	public Packet[] getPackets(XBeeIPConnection connection, int maxPackets) {
+		// bring in all packets waiting in the socket
+		processIncomingPackets();
 		
-		LinkedList<Packet> incomingPackets = new LinkedList<Packet>();
+		// pull up to maxPackets packets for the requesting connection
+		LinkedList<Packet> incomingPacketQueue = incomingPacketQueues.get(connection.getRemoteAddress());
+		Packet[] r = new Packet[Math.min(maxPackets, incomingPacketQueue.size())];
+		for (int i = 0; i < r.length; i++) {
+			r[i] = incomingPacketQueue.remove();
+		}
+		
+		// do any necessary queue maintenance
+		doQueueMaintenance();
+		
+		// return the requested packets
+		return r;
+	}
+	
+	/**
+	 * Checks for incoming packets and processes them into the queue.
+	 */
+	private synchronized void processIncomingPackets() {
 		// read all packet from the control socket
 		try {
 			while (true) {
 				DatagramPacket datagramPacket = new DatagramPacket(new byte[2048], 2048);
 				controlSocket.receive(datagramPacket);
-				Packet xbeePacket = PacketFactory.getPacketFromNetworkBytes(datagramPacket.getData(), datagramPacket.getOffset(), datagramPacket.getLength());
-				incomingPackets.add(xbeePacket);
+				if (incomingPacketQueues.containsKey(datagramPacket.getAddress())) {
+					// enqueue the packet
+					Packet xbeePacket = PacketFactory.getPacketFromNetworkBytes(datagramPacket.getData(), datagramPacket.getOffset(), datagramPacket.getLength());
+					incomingPacketQueues.get(datagramPacket.getAddress()).add(xbeePacket);
+				}
+				// drop any packets that don't have a listening connection
 			}
 		} catch (Exception e) {
-			// stop receiving packets when there is a timeout exception
+			// expect a timeout exception when there are no more packets
 		}
 		// read all packet from the serial socket
 		try {
 			while (true) {
 				DatagramPacket datagramPacket = new DatagramPacket(new byte[2048], 2048);
-				serialSocket.receive(datagramPacket);
-				Packet xbeePacket = PacketFactory.getPacketFromNetworkBytes(datagramPacket.getData(), datagramPacket.getOffset(), datagramPacket.getLength());
-				incomingPackets.add(xbeePacket);
+				controlSocket.receive(datagramPacket);
+				if (incomingPacketQueues.containsKey(datagramPacket.getAddress())) {
+					// enqueue the packet
+					Packet xbeePacket = PacketFactory.getPacketFromNetworkBytes(datagramPacket.getData(), datagramPacket.getOffset(), datagramPacket.getLength());
+					incomingPacketQueues.get(datagramPacket.getAddress()).add(xbeePacket);
+				}
+				// drop any packets that don't have a listening connection
 			}
 		} catch (Exception e) {
-			// stop receiving packets when there is a timeout exception
+			// expect a timeout exception when there are no more packets
 		}
 		
-		// take the chance to clean out abandoned packets;
-		//cleanCaches();
-
-		// return all the packets
-		// TODO: filter the packets by connection
-		return (Packet[])incomingPackets.toArray();
 	}
 	
 	/**
-	 * The maximum number of packets to cache. Set to a liberally large number, assuming resources are bountiful.
+	 * Removes expired items from the queues.
 	 */
-	//private int packetQueueLimit = 16384;
-	/**
-	 * Removes expired items from the caches/queues.
-	 */
-	/*
-	private void cleanCaches() {
-		
-	}
-	*/
-	
-	/**
-	 * Checks for incoming packets and processes them into the queue.
-	 */
-	/*
-	private synchronized void processIncomingPackets() {
-		try {
-			while (true) {
-				DatagramPacket datagramPacket = new DatagramPacket(new byte[2048], 2048);
-				socket.receive(datagramPacket);
-				// TODO: Create an XBee packet from this datagram packet
-				Packet xbeePacket = ;
-				
-				packetQueue.addFirst(xbeePacket);
+	private void doQueueMaintenance() {
+		for (LinkedList<Packet> queue : incomingPacketQueues.values()) {
+			while (queue.size() > packetQueueLimit) {
+				queue.remove();
 			}
-		} catch (IOException e) {
-			// do nothing, just stop processing
 		}
 	}
-	*/
+	
+	
 	
 	/**
 	 * 
@@ -255,6 +256,7 @@ public final class XBeeIPConcentrator {
 	private DatagramSocket getSerialSocket() throws SocketException {
 		if (serialSocket == null
 			|| serialSocket.isClosed()) {
+			// TODO: hard-coded socket number
 			serialSocket = new DatagramSocket(0x2616);
 			// don't wait around
 			serialSocket.setSoTimeout(1);

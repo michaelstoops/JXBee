@@ -5,15 +5,14 @@ This project includes both a library that does most of the work, and a command-l
 Features:
 - Communicates with XBee Wi-Fi modules using standard Wi-Fi. No serial cable or other special hardware required.
 - Requires only a remote XBee module, not a remote module plus a local module.
-- Supports* any number of connections at the same time: any number of XBee modules and/or Java clients.
-- Supports all XBee I/O pins, sending and receiving** data through the XBee's serial port.
+- Supports any number of connections at the same time: any number of XBee modules and/or Java clients.
+- Supports all XBee I/O pins, sending and receiving* data through the XBee's serial port.
 - Very portable, tested on Windows, Linux, and Android. Should work on anything else that supports JavaSE 1.6.
 - MIT License, use the software for whatever you want.
 
 Caveats:
 - Doesn't yet support the ZigBee, 802.15.4, DigiMesh and other families of XBee devices, because PCs don't tend to have the radios to talk with them. Tunneling through a serial cable or XIG may be supported in the future.
-* Packet routing and queuing isn't implemented yet. Packets go to the first connection that asks.
-** Doesn't yet receive serial data from the XBee module.
+* Doesn't yet receive serial data from the XBee module.
 
 Possible future features:
 - Proper testing scheme with JUnit.
