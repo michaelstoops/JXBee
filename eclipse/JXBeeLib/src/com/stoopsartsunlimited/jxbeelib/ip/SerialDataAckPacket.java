@@ -1,8 +1,5 @@
 package com.stoopsartsunlimited.jxbeelib.ip;
 
-import java.util.Arrays;
-
-import com.stoopsartsunlimited.jxbeelib.XBeeException;
 
 /**
  * Represents a packet that an XBee module sends to say that it received your serial data.
@@ -14,29 +11,33 @@ import com.stoopsartsunlimited.jxbeelib.XBeeException;
  */
 public class SerialDataAckPacket extends Packet {
 
-	protected byte[] packetBytes = null;
-
-	public SerialDataAckPacket(byte[] networkData, int length)
-			throws XBeeException {
+	/**
+	 * Constructs an empty SerialDataAckPacket.
+	 */
+	public SerialDataAckPacket() {
 		super();
+		packetBytes = new byte[]{ PacketCommand.DATA_ACK.getByte(), 0 };
+	}
+
+	/**
+	 * Constructs a SerialDataAckPacket from an image.
+	 * @param networkData
+	 * @param offset
+	 * @param length
+	 */
+	public SerialDataAckPacket(byte[] networkData, int offset, int length) {
+		super(networkData, offset, length);
 
 		// check validity
 		if (networkData.length != 2
 				|| length != 2) {
-			throw new XBeeException("SerialDataAckPacket must be exactly two bytes long.");
+			throw new IllegalArgumentException("Serial data ack packets must be exactly two bytes long. This packet image is " + length);
 		}
-
-		packetBytes = Arrays.copyOfRange(networkData, 0, networkData.length);
-	}
-
-	public PacketCommands getCommand() {
-		return commandByteToEnum(packetBytes[0]);
+		if (getPacketCommand() != PacketCommand.DATA_ACK) {
+			throw new IllegalArgumentException(wrongClassMessage);
+		}
 	}
 	
-	@Override
-	public byte[] getBytes() {
-		return packetBytes;
-	}
-
+	// there really isn't any more to this packet type
 
 }

@@ -1,71 +1,85 @@
 package com.stoopsartsunlimited.jxbeelib.ip;
 
-import com.stoopsartsunlimited.jxbeelib.XBeeException;
+import java.util.Arrays;
 
 /**
  * Abstract class for all XBee packets that are to travel over IP.
  * @author Michael
  *
  */
-public abstract class Packet {
+public class Packet {
+	
+	// fields
+	
+	protected byte[] packetBytes = null;
+	
+	protected static String wrongClassMessage = "This packet image does not contain a packet of the expected type. Use a different Packet class."; 
+
+	// constructors
+	
+	/**
+	 * Creates a blank packet of the minimum length
+	 */
 	public Packet() {
-		// just a packet object, no value
+		// just a blank packet
+		packetBytes = new byte[]{ 0, 0 };
 	}
 	
-	public Packet(byte[] networkData, int length) throws XBeeException {
-		
+	/**
+	 * Constructs a packet object from the given bytes
+	 * @param networkData bytes as taken from a UDP payload
+	 * @param offset
+	 * @param length
+	 */
+	public Packet(byte[] networkData, int offset, int length) {
+		if (networkData == null
+			|| length < 2) {
+			throw new IllegalArgumentException();
+		}
+		packetBytes = Arrays.copyOfRange(networkData, offset, length);
 	}
+	
+	
+	
+	
+	
+	
+	
+	// packetBytes accessors
+	
+	// no setter because you shoud really just make a new packet object instead.
 	
 	/**
 	 * Gets an array of bytes that represent the network form of this packet. Suitable for transmission.
 	 * @return
 	 */
-	public abstract byte[] getBytes();
-	
-	/**
-	 * Converts a packet command enum value to the corresponding code byte.
-	 * @param command
-	 * @return
-	 * @throws XBeeException
-	 */
-	static byte commandEnumToByte(PacketCommands command) throws IllegalArgumentException {
-		switch (command) {
-		case DATA:
-			return 0x00;
-		case REMOTE_COMMAND:
-			return 0x02;
-		case IO_SAMPLE:
-			return 0x04;
-		case DATA_ACK:
-			return (byte) 0x80;
-		case REMOTE_COMMAND_RESPONSE:
-			return (byte) 0x82;
-		default:
-			throw new IllegalArgumentException("Invalid command: " + command);
-		}
+	public byte[] getBytes() {
+		return packetBytes; 
 	}
 
+	
+	
+	
+	
+	
+	
+	// packet command accessors
+	
 	/**
-	 * Converts a packet command code byte to the corresponding enum value.
-	 * @param command
+	 * Get the packet command type of this packet. This value distinguishes between major types of packets
+	 * such as command request and response packets, etc.
 	 * @return
-	 * @throws XBeeException
 	 */
-	static PacketCommands commandByteToEnum(byte command) throws IllegalArgumentException {
-		switch (command) {
-		case 0x00:
-			return PacketCommands.DATA;
-		case 0x02:
-			return PacketCommands.REMOTE_COMMAND;
-		case 0x04:
-			return PacketCommands.IO_SAMPLE;
-		case (byte)0x80:
-			return PacketCommands.DATA_ACK;
-		case (byte)0x82:
-			return PacketCommands.REMOTE_COMMAND_RESPONSE;
-		default:
-			throw new IllegalArgumentException("Invalid command: " + command);
-		}
+	public PacketCommand getPacketCommand() {
+		return PacketCommand.getPacketCommand(packetBytes[0]);
 	}
 	
+	/**
+	 * Sets the packet command of this packet. This is what distinguishes between major types of packets
+	 * such as command request and response packets, etc.
+	 * @param packetCommand
+	 */
+	public void setPacketCommand(PacketCommand packetCommand) {
+		packetBytes[0] = packetCommand.getByte();
+	}
 }

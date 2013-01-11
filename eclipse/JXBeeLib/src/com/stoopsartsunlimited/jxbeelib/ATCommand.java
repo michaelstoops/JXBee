@@ -6,7 +6,7 @@ package com.stoopsartsunlimited.jxbeelib;
  * @author Michael
  * 
  */
-public final class ATCommands {
+public final class ATCommand {
 	// addressing
 	//public static final String DESTINATION_ADDRESS_HIGH = "DH";
 	public static final String DESTINATION_ADDRESS_LOW = "DL";

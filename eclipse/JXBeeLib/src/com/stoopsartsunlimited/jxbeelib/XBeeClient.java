@@ -153,7 +153,7 @@ public class XBeeClient {
 			byte[] bytesThisPacket = new byte[Math.min(buffer.remaining(), maxBytesPerPacket)];
 			buffer.get(bytesThisPacket);
 			SerialDataPacket packet = new SerialDataPacket();
-			packet.setSerialData(bytesThisPacket);
+			packet.setSerialData(bytesThisPacket, 0, bytesThisPacket.length);
 			connection.sendPacket(packet);
 		}
 	}
@@ -195,8 +195,8 @@ public class XBeeClient {
 			if (packet instanceof CommandResponsePacket) {
 				CommandResponsePacket response = (CommandResponsePacket)packet;
 				if (response.getStatus() == Status.OK
-						&& response.getParameterBytes() != null) {
-					setState(response.getATCommand(), response.getParameterBytes());
+						&& response.getParameter() != null) {
+					setState(response.getATCommand(), response.getParameter());
 				}
 			}
 		} catch (Exception e) {
