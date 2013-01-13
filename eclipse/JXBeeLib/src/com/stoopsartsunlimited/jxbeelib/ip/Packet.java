@@ -38,8 +38,7 @@ public class Packet {
 		}
 		packetBytes = Arrays.copyOfRange(networkData, offset, length);
 	}
-	
-	
+		
 	
 	
 	

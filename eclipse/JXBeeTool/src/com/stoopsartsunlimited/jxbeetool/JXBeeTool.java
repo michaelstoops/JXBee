@@ -10,6 +10,7 @@ public class JXBeeTool {
 	static String USAGE = "Usage:\n" +
 			"  " + JXBeeTool.programName + " COMMAND PARAMS\n" +
 			"COMMAND:\n" +
+			"  " + DiscoverCommand.toolName + "       attempts to find XBee devices on this subnet\n" +
 			"  " + GetCommand.toolName + "       asks an XBee device for information\n" +
 			"  " + SendCommand.toolName + "       sends a command to an XBee device\n" +
 			"  " + SerialCommand.toolName + "       asks an XBee device to send data out its serial port\n" +
@@ -20,10 +21,18 @@ public class JXBeeTool {
 		
 		try {
 			// find the requested tool and execute it
+			if (args.length == 0) {
+				System.out.println(USAGE);
+				return;
+			}
+			
 			String arg = args[0];
 			String[] toolArgs = Arrays.copyOfRange(args, 1, args.length);
 			if (arg.equals("-h")) {
 				System.out.println(USAGE);
+				return;
+			} else if (arg.equals(DiscoverCommand.toolName)) {
+				DiscoverCommand.main(toolArgs);
 				return;
 			} else if (arg.equals(GetCommand.toolName)) {
 				GetCommand.main(toolArgs);

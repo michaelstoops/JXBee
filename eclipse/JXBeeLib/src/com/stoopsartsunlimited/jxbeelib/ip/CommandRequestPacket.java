@@ -257,7 +257,7 @@ public class CommandRequestPacket extends Packet {
 	// parameter accessors
 	
 	/**
-	 * @return Returns a copy of the packet parameter as a byte array.
+	 * @return Returns a copy of the packet parameter as a byte array. If there is no parameter, the return value is a byte array of length zero.
 	 */
 	public byte[] getParameter() {
 		return Arrays.copyOfRange(packetBytes, 6, packetBytes.length);

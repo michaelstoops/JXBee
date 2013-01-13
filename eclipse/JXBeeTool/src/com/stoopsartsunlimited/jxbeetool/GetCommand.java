@@ -250,7 +250,7 @@ public class GetCommand {
 			if (client.containsState(atCommands[i])) {
 				byte[] state = client.getState(command);
 				if (useFormattedStrings) {
-					r[i] = ATCommandHelper.getParameterString(command, state);
+					r[i] = ATCommandHelper.decodeToString(command, state);
 				} else {
 					r[i] = new BigInteger(1, state).toString(16);
 				}

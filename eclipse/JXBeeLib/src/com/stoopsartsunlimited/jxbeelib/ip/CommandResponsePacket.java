@@ -84,7 +84,7 @@ public class CommandResponsePacket extends Packet {
 	 * @param atCommand
 	 */
 	public void setATCommand(String atCommand) {
-		byte[] bytes = Charset.forName("US-ASCII").encode(atCommand.substring(0, 1)).array();
+		byte[] bytes = Charset.forName("US-ASCII").encode(atCommand.substring(0, 2)).array();
 		packetBytes[3] = bytes[0]; // AT command, first character
 		packetBytes[4] = bytes[1]; // AT command, second character
 	}

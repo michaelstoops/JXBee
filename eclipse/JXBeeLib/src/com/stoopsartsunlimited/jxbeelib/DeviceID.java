@@ -11,7 +11,7 @@ import java.util.Arrays;
  */
 public class DeviceID {
 	/**
-	 * Array of six bytes that make up the device serial number. Usually derived from a MAC address
+	 * Array of eight bytes that make up the device serial number. Usually derived from a MAC address
 	 * for whatever network the device uses.
 	 * 
 	 * Wi-Fi devices have 48-bit MAC addresses, padded with zeroes starting with the MSB.
@@ -44,6 +44,14 @@ public class DeviceID {
 	}
 	public long getLowInt() {
 		return ByteBuffer.wrap(serialNumber).getInt(4);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof DeviceID) {
+			return ((DeviceID)obj).getLong() == getLong();
+		}
+		return false;
 	}
 
 }

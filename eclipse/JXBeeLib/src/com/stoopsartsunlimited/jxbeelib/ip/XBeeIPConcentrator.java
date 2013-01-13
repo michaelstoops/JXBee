@@ -6,10 +6,12 @@ import java.net.DatagramSocket;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import com.stoopsartsunlimited.jxbeelib.ATCommand;
 import com.stoopsartsunlimited.jxbeelib.XBeeException;
 
 /**
@@ -47,7 +49,7 @@ import com.stoopsartsunlimited.jxbeelib.XBeeException;
  * @author Michael
  *
  */
-public final class XBeeIPConcentrator {
+public final class XBeeIPConcentrator implements PacketPublisher{
 	private static XBeeIPConcentrator instance = null;
 	
 	private XBeeIPConcentrator() {
@@ -177,12 +179,13 @@ public final class XBeeIPConcentrator {
 			while (true) {
 				DatagramPacket datagramPacket = new DatagramPacket(new byte[2048], 2048);
 				controlSocket.receive(datagramPacket);
+				Packet xbeePacket = PacketFactory.getPacketFromNetworkBytes(datagramPacket.getData(), datagramPacket.getOffset(), datagramPacket.getLength());
 				if (incomingPacketQueues.containsKey(datagramPacket.getAddress())) {
 					// enqueue the packet
-					Packet xbeePacket = PacketFactory.getPacketFromNetworkBytes(datagramPacket.getData(), datagramPacket.getOffset(), datagramPacket.getLength());
 					incomingPacketQueues.get(datagramPacket.getAddress()).add(xbeePacket);
 				}
-				// drop any packets that don't have a listening connection
+				// publish that packet to subscribers
+				notify(xbeePacket, datagramPacket);
 			}
 		} catch (Exception e) {
 			// expect a timeout exception when there are no more packets
@@ -192,12 +195,13 @@ public final class XBeeIPConcentrator {
 			while (true) {
 				DatagramPacket datagramPacket = new DatagramPacket(new byte[2048], 2048);
 				controlSocket.receive(datagramPacket);
+				Packet xbeePacket = PacketFactory.getPacketFromNetworkBytes(datagramPacket.getData(), datagramPacket.getOffset(), datagramPacket.getLength());
 				if (incomingPacketQueues.containsKey(datagramPacket.getAddress())) {
 					// enqueue the packet
-					Packet xbeePacket = PacketFactory.getPacketFromNetworkBytes(datagramPacket.getData(), datagramPacket.getOffset(), datagramPacket.getLength());
 					incomingPacketQueues.get(datagramPacket.getAddress()).add(xbeePacket);
 				}
-				// drop any packets that don't have a listening connection
+				// publish that packet to subscribers
+				notify(xbeePacket, datagramPacket);
 			}
 		} catch (Exception e) {
 			// expect a timeout exception when there are no more packets
@@ -229,7 +233,6 @@ public final class XBeeIPConcentrator {
 		if (!connection.isOpen()) {
 			throw new XBeeException("Can't send packet because the connection is closed.");
 		}
-		byte[] packetBytes = packet.getBytes();
 		
 		int remotePort = 0;
 		if (packet instanceof SerialDataPacket
@@ -241,11 +244,17 @@ public final class XBeeIPConcentrator {
 			remotePort = connection.getRemoteControlPort();
 		}
 		
-		DatagramPacket p = new DatagramPacket(packetBytes, packetBytes.length, connection.remoteAddress, remotePort);
+		sendPacket(packet, connection.remoteAddress, remotePort);
+	}
+	
+	private synchronized void sendPacket(Packet packet, InetAddress remoteAddress, int remotePort) throws XBeeException {
+		byte[] packetBytes = packet.getBytes();
+		
+		DatagramPacket p = new DatagramPacket(packetBytes, packetBytes.length, remoteAddress, remotePort);
 		try {
 			getControlSocket().send(p);
 		} catch (IOException e) {
-			throw new XBeeException(String.format("Error while sending packet %s to %s:%d", packet.toString(), connection.remoteAddress.toString(), remotePort), e);
+			throw new XBeeException(String.format("Error while sending packet %s to %s:%d", packet.toString(), remoteAddress.toString(), remotePort), e);
 		}
 	}
 
@@ -282,4 +291,97 @@ public final class XBeeIPConcentrator {
 		serialSocket.close();
 		
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	// PacketPublisher implementation
+	
+	protected LinkedList<PacketSubscriber> subscribers = new LinkedList<PacketSubscriber>();
+
+	/**
+	 * Adds a PacketSubscriber to this PacketPublisher
+	 */
+	@Override
+	public void attach(PacketSubscriber subscriber) {
+		subscribers.add(subscriber);
+	}
+
+	/**
+	 * Removes a PacketSubscriber from this PacketPublisher
+	 */
+	@Override
+	public void detach(PacketSubscriber subscriber) {
+		subscribers.remove(subscriber);
+	}
+	
+	/**
+	 * Calls update() on each PacketSubscriber
+	 * @param packet
+	 */
+	public void notify(Packet packet, Object... context) {
+		for (PacketSubscriber subscriber : subscribers) {
+			subscriber.update(PacketFactory.getCopyOf(packet), context);
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	// snooping feature
+	
+	private NetworkSnooper snooper;
+	
+	/**
+	 * @return the snooper
+	 */
+	public NetworkSnooper getSnooper() {
+		return snooper;
+	}
+
+	public synchronized void useNetworkSnooper(boolean v) {
+		if (v) {
+			// do snoop
+			if (snooper == null) {
+				snooper = new NetworkSnooper();
+				attach(snooper);
+			}
+		} else {
+			if (snooper != null) {
+				detach(snooper);
+				snooper = null;
+			}
+		}
+	}
+	
+	/**
+	 * Attempts to tease all the XBee devices into declaring themselves using a broadcast packet.
+	 * @throws UnknownHostException
+	 * @throws XBeeException
+	 */
+	public void pingAllXBees() throws UnknownHostException, XBeeException {
+		String[] atCommands = new String[]{
+				ATCommand.SERIAL_NUMBER_HIGH,
+				ATCommand.SERIAL_NUMBER_LOW,
+				ATCommand.NETWORK_ADDRESS,
+				ATCommand.DEVICE_TYPE_IDENTIFIER,
+				ATCommand.NODE_IDENTIFIER,
+				ATCommand.API_ENABLE,
+		};
+		for (String atCommand : atCommands) {
+			CommandRequestPacket packet = new CommandRequestPacket(255, atCommand);
+			sendPacket(packet, InetAddress.getByName("255.255.255.255"), 0xBEE);
+		}
+	}
+
+
 }

@@ -101,6 +101,9 @@ public class SendCommand {
 				return;
 			}
 			
+			// TODO: Generate parameter here,
+			parameter = ATCommandHelper.encodeAT(atCommand, ATCommandHelper.parse(atCommand, dataArg));
+			
 			client = new XBeeClient((Inet4Address)Inet4Address.getByName(host));
 			client.setReadTimeout(50);
 			
@@ -110,7 +113,7 @@ public class SendCommand {
 				if (useHexOutput) {
 					System.out.println(new BigInteger(1, state).toString(16));
 				} else {
-					System.out.println(ATCommandHelper.getParameterString(atCommand, state));
+					System.out.println(ATCommandHelper.decodeToString(atCommand, state));
 				}
 			}
 			

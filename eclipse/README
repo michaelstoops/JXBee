@@ -1,21 +1,21 @@
 The JXBee project helps Java programmers access Digi(TM) XBee(TM) devices.
 
-This project includes both a library that does most of the work, and a command-line executable. The executable itself is both a demonstration of how to use the library, and a very useful command-line client for XBee devices.
+This project includes both a library that does most of the work, a command-line tool, and a simulator. The tool is both a demonstration of how to use the library, and a very useful command-line client for XBee devices.
 
 Features:
 - Communicates with XBee Wi-Fi modules using standard Wi-Fi. No serial cable or other special hardware required.
 - Requires only a remote XBee module, not a remote module plus a local module.
 - Supports any number of connections at the same time: any number of XBee modules and/or Java clients.
-- Supports all XBee I/O pins, sending and receiving* data through the XBee's serial port.
+- Supports all XBee I/O pins, sending (and receiving, someday) data through the XBee's serial port.
+- Simulator acts as an XBee Wi-Fi module on the network. 
 - Very portable, tested on Windows, Linux, and Android. Should work on anything else that supports JavaSE 1.6.
 - MIT License, use the software for whatever you want.
 
 Caveats:
 - Doesn't yet support the ZigBee, 802.15.4, DigiMesh and other families of XBee devices, because PCs don't tend to have the radios to talk with them. Tunneling through a serial cable or XIG may be supported in the future.
-* Doesn't yet receive serial data from the XBee module.
 
 Possible future features:
-- Proper testing scheme with JUnit.
+- Needs thorough testing.
 
 All trademarks are property of their respective owners. 
 

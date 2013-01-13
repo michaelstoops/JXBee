@@ -1,5 +1,7 @@
 package com.stoopsartsunlimited.jxbeelib.ip;
 
+import java.util.Arrays;
+
 
 /**
  * Factory class for producing XBee IP packets.
@@ -18,26 +20,33 @@ public class PacketFactory {
 	}
 	
 	/**
-	 * Construct the appropriate packet type from the given bytes.
+	 * Construct the appropriate packet type from the given bytes. Creates a copy of the packet byte array.
 	 * @param data
 	 * @param offset
 	 * @param length
 	 * @return
 	 */
 	public static Packet getPacketFromNetworkBytes(byte[] data, int offset, int length) {
-		switch (PacketCommand.getPacketCommand(data[offset])) {
+		
+		byte[] dataCopy = Arrays.copyOfRange(data, offset, offset + length);
+		
+		switch (PacketCommand.getPacketCommand(dataCopy[0])) {
 		case DATA:
-			return new SerialDataPacket(data, offset, length);
+			return new SerialDataPacket(dataCopy, 0, dataCopy.length);
 		case REMOTE_COMMAND:
-			return new CommandRequestPacket(data, offset, length);
+			return new CommandRequestPacket(dataCopy, 0, dataCopy.length);
 		case IO_SAMPLE:
-			return new IOSamplePacket(data, offset, length);
+			return new IOSamplePacket(dataCopy, 0, dataCopy.length);
 		case DATA_ACK:
-			return new SerialDataAckPacket(data, offset, length);
+			return new SerialDataAckPacket(dataCopy, 0, dataCopy.length);
 		case REMOTE_COMMAND_RESPONSE:
-			return new CommandResponsePacket(data, offset, length);
+			return new CommandResponsePacket(dataCopy, 0, dataCopy.length);
 		default:
-			return new Packet(data, offset, length);
+			return new Packet(dataCopy, 0, dataCopy.length);
 		}
+	}
+	
+	public static Packet getCopyOf(Packet packet) {
+		return getPacketFromNetworkBytes(packet.getBytes());
 	}
 }
