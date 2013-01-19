@@ -1,0 +1,32 @@
+JXBee project is an open-source software suite intended to make it easy to access [http://www.digi.com/ Digi&trade;] [http://www.digi.com/products/wireless-wired-embedded-solutions/zigbee-rf-modules/zigbee-mesh-module/ XBee&trade;] devices from easily-available computing platforms. It provides professional-quality support for high-level software environments to access XBee modules.
+
+JXBee software is written in Java, so the best way to access it is from other Java code. You can call it from other environments via wrappers. JXBee includes command-line tools that deliver functionality directly to the command line, and are also scriptable so they can be called by [http://en.wikipedia.org/wiki/Bourne_shell sh], [http://en.wikipedia.org/wiki/Powershell PowerShell], [http://en.wikipedia.org/wiki/Common_Gateway_Interface CGI], [http://en.wikipedia.org/wiki/Cron cron], [http://en.wikipedia.org/wiki/Inetd inetd], and the like.
+
+JXBee software is licensed under the [http://en.wikipedia.org/wiki/MIT_License MIT License]. You can use the code for whatever you like--commercial, hobbyist, or whatever--so long as the JXBee source code itself stays under the MIT License.
+
+''JXBee is not affiliated with Digi International Inc., owner of the "Digi" and "XBee" trademarks.''
+
+=What other XBee projects are out there?=
+* [http://code.google.com/p/xbee-api/ xbee-api] - full-featured Java library. Licensed under GNU GPL v3. Targeted at the [http://www.digi.com/products/wireless-wired-embedded-solutions/zigbee-rf-modules/point-multipoint-rfmodules/xbee-series1-module 802.15.4] and [http://www.digi.com/products/wireless-wired-embedded-solutions/zigbee-rf-modules/zigbee-mesh-module/xbee-zb-module.jsp ZigBee families of XBee modules].
+* [http://code.google.com/p/python-xbee/ python-xbee] - minimal Python library. Licensed under MIT terms. Targeted at the 802.15.4 and ZigBee families of XBee modules.
+* [http://www.faludi.com/examples/xbee-api-library-for-processing/ XBee API Library for Processing] - Arduino library. Not formally under any license, but [http://www.faludi.com/examples/xbee-api-library-for-processing/#comment-11473 treated as GPL]. Targeted at the 802.15.4 and ZigBee families of XBee modules.
+* [http://code.google.com/p/libxbee/ libxbee] - C/C++ library. Licensed under the GNU Lesser GPL. Targeted at [http://attie.co.uk/libxbee/getting_started/#mode 802.15.4, ZigBee, DigiMesh and similar module families].
+* [http://code.google.com/p/xig/ XBee Internet Gateway] - Digi's official offering to the open source community. Licensed under then GNU Lesser GPL. It is written in Python and it's less a library and more a port of the [http://www.digi.com/products/wireless-routers-gateways/gateways/connectportx2ezb#overview ConnectPort] functionality, which acts as a portal between TCP/IP networks and an XBee network.
+
+=What makes JXBee different?=
+In a word, ''Wi-Fi''. JXBee communicates directly over the air from your computing platform to the XBee module. The other libraries don't target the [http://www.digi.com/products/wireless-wired-embedded-solutions/zigbee-rf-modules/point-multipoint-rfmodules/xbee-wi-fi Wi-Fi family of XBee modules] at all. They're missing several major advantages of the Wi-Fi family: interoperability, simplicity and cost.
+;Interoperability
+:All of the other XBee libraries expect to communicate with XBee modules via an RS-232 serial cable. Do your users' phones/tablets/desktops have RS-232 ports? Nope, but everybody has Wi-Fi, either internally or via an access point.
+;Simplicity
+:Because all the computers talk Wi-Fi directly, you don't need to mess with a serial connection and a matched pair of RF modules. The other XBee families would require the following arrangement:
+:<pre>PC/phone/whatever -> serial dongle -> local XBee -> remote XBee</pre>
+:In contrast, the Wi-Fi modules can use a much simpler arrangement:
+:<pre>PC/phone/whatever -> remote XBee</pre>
+:True, you still have to use a serial connection to initially configure the XBee module, but the same is true for the other modules. Wouldn't it be nice if Digi provided a simple auto-association feature to join all open networks round-robin-style so we could discover and configure them without a serial connection?
+;Cost
+:With the other XBee modules, you will need not just one module but two, and an RS-232 dongle too. With a Wi-Fi module, you just need your regular computer and a XBee module. Sure, the Wi-Fi modules themselves are priced at $35 each, where the other units are around $25. But think of the total cost--if you need two ZigBee modules at $25 each, that's $50. A USB serial dongle with an XBee socket is another  [https://www.sparkfun.com/products/8687 $25 from SparkFun] or [http://www.digi.com/products/model?mid=3285 $79 from Digi] with a ZigBee module.
+
+If you want to easily connect to an XBee module using the computing platform you already have, the Wi-Fi XBee module is the obvious choice.
+
+=Why Java?=
+Platform-independence. Java is everywhere, from [http://aws.amazon.com/java/ cloud platforms] to [http://www.raspberrypi.org/ Raspberry Pi] and [http://en.wikipedia.org/wiki/Android_(operating_system)#Applications your mobile phone]. Java is very widely supported. 
