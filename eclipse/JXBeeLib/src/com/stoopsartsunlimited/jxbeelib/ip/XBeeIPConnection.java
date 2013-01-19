@@ -1,12 +1,12 @@
 package com.stoopsartsunlimited.jxbeelib.ip;
 
-import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.SocketException;
 
 import com.stoopsartsunlimited.jxbeelib.XBeeException;
 
 public class XBeeIPConnection {
-	protected Inet4Address remoteAddress;
+	protected InetAddress remoteAddress;
 	protected int remoteControlPort = 0xBEE;
 	// TODO: hardcoded port below
 	protected int remoteDataPort = 0x2616;
@@ -20,7 +20,7 @@ public class XBeeIPConnection {
 	 * @param remoteAddress
 	 * @throws XBeeException if the connection object can't be created. See XBeeIPConcentrator for other options.
 	 */
-	public XBeeIPConnection(Inet4Address remoteAddress) throws XBeeException {
+	public XBeeIPConnection(InetAddress remoteAddress) throws XBeeException {
 		this.remoteAddress = remoteAddress;
 		// register with the concentrator
 		concentrator = XBeeIPConcentrator.getInstance();
@@ -80,7 +80,7 @@ public class XBeeIPConnection {
 	/**
 	 * @return the remoteAddress
 	 */
-	public Inet4Address getRemoteAddress() {
+	public InetAddress getRemoteAddress() {
 		return remoteAddress;
 	}
 

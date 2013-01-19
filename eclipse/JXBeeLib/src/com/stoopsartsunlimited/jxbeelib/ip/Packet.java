@@ -81,4 +81,44 @@ public class Packet {
 	public void setPacketCommand(PacketCommand packetCommand) {
 		packetBytes[0] = packetCommand.getByte();
 	}
+	
+
+	
+	
+	
+	
+	
+	
+	
+	// packet command options accessors
+	
+	/**
+	 * Get the packet command options of this packet.
+	 * @return
+	 */
+	public byte getPacketCommandOptions() {
+		return packetBytes[1];
+	}
+	
+	/**
+	 * Sets the packet command options of this packet.
+	 * @param packetCommand
+	 */
+	public void setPacketCommandOptions(byte options) {
+		packetBytes[1] = options;
+	}
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	@Override
+	public String toString() {
+		return getClass().getSimpleName();
+	}
 }

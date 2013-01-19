@@ -4,6 +4,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 
+import com.stoopsartsunlimited.jxbeelib.ATCommandHelper;
+
 /**
  * Represents a packet that is a response from an XBee module.
  * 
@@ -207,5 +209,21 @@ public class CommandResponsePacket extends Packet {
 	 */
 	public void clearParameter() {
 		packetBytes = ByteBuffer.allocate(6).put(packetBytes, 0, 6).array();
+	}
+	
+	
+	
+	
+	
+	
+	
+	@Override
+	public String toString() {
+		return String.format("%s: ID=0x%02X %s %s%s",
+				getClass().getSimpleName(),
+				getFrameID(),
+				getStatus(),
+				getATCommand(),
+				getParameter().length == 0 ? "" : "=" + ATCommandHelper.decodeToString(getATCommand(), getParameter()));
 	}
 }

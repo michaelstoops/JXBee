@@ -1,53 +1,69 @@
 package com.stoopsartsunlimited.jxbeetool;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 
 public class JXBeeTool {
 	
-	static String programName = "jxbeetool";
-
-	static String USAGE = "Usage:\n" +
-			"  " + JXBeeTool.programName + " COMMAND PARAMS\n" +
-			"COMMAND:\n" +
-			"  " + DiscoverCommand.toolName + "       attempts to find XBee devices on this subnet\n" +
-			"  " + GetCommand.toolName + "       asks an XBee device for information\n" +
-			"  " + SendCommand.toolName + "       sends a command to an XBee device\n" +
-			"  " + SerialCommand.toolName + "       asks an XBee device to send data out its serial port\n" +
-			"PARAMS:\n" +
-			"  varies by the COMMAND used. Call a command with PARAMS=\"-h\" for help on that command.";
+	static String PROGRAM_NAME = "jxbeetool";
+	private static Map<String, Tool> tools = new HashMap<String, Tool>();
 
 	public static void main(String[] args) {
 		
+		// create tools
+		Tool tool;
+		tool = new DiscoverTool(args);
+		tools.put(tool.getToolName(), tool);
+		tool = new GetTool(args);
+		tools.put(tool.getToolName(), tool);
+		tool = new SendTool(args);
+		tools.put(tool.getToolName(), tool);
+		tool = new SerialTool(args);
+		tools.put(tool.getToolName(), tool);
+		
+		if (args.length == 0
+				|| args[0].equals("-h")
+				|| args[0].equals("--help")) {
+			printHelp();
+			return;
+		}
+
+		// check the tool request
+		tool = tools.get(args[0]);
+		if (tool == null) {
+			printHelp();
+			return;
+		}
+
+		// execute the tool
 		try {
-			// find the requested tool and execute it
-			if (args.length == 0) {
-				System.out.println(USAGE);
-				return;
-			}
-			
-			String arg = args[0];
-			String[] toolArgs = Arrays.copyOfRange(args, 1, args.length);
-			if (arg.equals("-h")) {
-				System.out.println(USAGE);
-				return;
-			} else if (arg.equals(DiscoverCommand.toolName)) {
-				DiscoverCommand.main(toolArgs);
-				return;
-			} else if (arg.equals(GetCommand.toolName)) {
-				GetCommand.main(toolArgs);
-				return;
-			} else if (arg.equals(SendCommand.toolName)) {
-				SendCommand.main(toolArgs);
-				return;
-			} else if (arg.equals(SerialCommand.toolName)) {
-				SerialCommand.main(toolArgs);
-				return;
-			}
-		} catch (Exception e) {
+			tool.main(ArrayUtils.subarray(args, 2, args.length));
+		} catch (InterruptedException e) {
+			// just stop
+		} catch (Throwable e) {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	
+	private static void printHelp() {
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("usage:  " + JXBeeTool.PROGRAM_NAME + " COMMAND ...\n" +
+				"COMMAND:\n");
+		List<String> toolNames = new ArrayList<String>(tools.keySet());
+		Collections.sort(toolNames);
+		for (String name : toolNames) {
+			sb.append(String.format("  %s - %s\n", name, tools.get(name).getDescription()));
+		}
+		System.out.print(sb);
 	}
 
 }

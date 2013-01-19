@@ -1,133 +1,137 @@
 package com.stoopsartsunlimited.jxbeetool;
 
 import java.math.BigInteger;
-import java.net.Inet4Address;
-import java.net.UnknownHostException;
+import java.util.Date;
+import java.util.LinkedList;
 
-import com.stoopsartsunlimited.jxbeelib.ATCommandHelper;
+import org.apache.commons.lang3.StringUtils;
+
 import com.stoopsartsunlimited.jxbeelib.ATCommand;
+import com.stoopsartsunlimited.jxbeelib.ATCommandHelper;
 import com.stoopsartsunlimited.jxbeelib.XBeeClient;
-import com.stoopsartsunlimited.jxbeelib.XBeeException;
 
-public class SendCommand {
+/**
+ * Provides functionality to retrieve register data from an XBee module.
+ *  
+ * @author Michael
+ *
+ */
+public class GetTool extends Tool {
 
-	static final String toolName = "send";
+	private String ALL = "C0,DD,DE,DL,GW,MK,MY,NI,NP,SH,SL,AH,BR,CH,EE,ID,IP,MA,PK,PL,TM,AP,BD,D6,D7,FT,NB,RO,SB,IC,IF,IR,P0,P0,P1,P2,P3,P3,P4,D0,D1,D2,D3,D4,D5,AV,D8,D9,LT,M0,M1,PD,PR,%V,AI,CK,DB,HV,TP,VR,CC,CT,GT,SM,SO,SP,ST,WH";
+	private String NO_HEADER = "nh";
+	private String NO_TIMESTAMP = "nt";
+	private String HEX = "x";
+	private String SEPARATOR = "s";
+	private String NUMBER = "n";
+	private String DELAY = "d";
+	private String COMMANDS = "c";
+
+	public GetTool(String[] args) {
+		super(args);
+		setToolName("get");
+		setDescription("asks an XBee device for information");
+		options.addOption(NO_HEADER, "no-header", false, "don't print a header line");
+		options.addOption(NO_TIMESTAMP, "no-timestamp", false, "don't print a timestamp on each line");
+		options.addOption(HEX, "hex", false, "output raw bytes in hex instead of friendly, formatted data");
+		options.addOption(SEPARATOR, "separator", true, "specify the separator to use between columns in the output");
+		options.addOption(NUMBER, "number-of-samples", true, "number of samples to take");
+		options.addOption(DELAY, "delay", true, "delay (in ms) between samples. *sample rate not guaranteed.");
+		options.addOption(COMMANDS, "commands", true, "comma-separated list of the AT commands to be polled. Special value \"ALL\" is equivalent to all documented AT commands.");
+	}
 	
-	static String host;
-	static XBeeClient client;
-
-	static String atCommand;
-	static String dataArg;
-	static boolean useHexParameter = false;
-	static boolean useHexOutput = false;
-	static byte[] parameter;
-
-	static final String USAGE = "Usage:\n" +
-			"  " + JXBeeTool.programName + " " + toolName + " [OPTIONS] HOSTNAME ATCOMMAND [DATA]\n" +
-			"OPTIONS:\n" +
-			"  -h        view this help message\n" +
-			"  -ix       the DATA is encoded as hex string. Useful for sending unusual values.\n" +
-			"  -ox       if any data is returned by the device, print it as a hex string.\n" +
-			"HOSTNAME:\n" +
-			"  The dotted IPV4 address or DNS name of the remote device you want to poll.\n" +
-			"ATCOMMAND\n" +
-			"  The two-character AT commands to be set.";
-	
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
+	public void main(String[] args) throws Throwable {
+		super.main(args);
 		
-		try {
-			int i;
-			
-			// process arguments
-			try {
-				for (i = 0; i < args.length; i++) {
-					String arg = args[i];
-					try {
-						if (arg.equals("-h")) {
-							System.out.println(USAGE);
-							return;
-						} else if (arg.equals("-ix")) {
-							useHexParameter = true;
-						} else {
-							break;
-						}
-					} catch (Exception e) {
-						System.err.println("error processing argument: " + arg);
-						System.err.println(USAGE);
-						return;
-					}
-				}
-				try {
-					host = args[i++];
-				} catch (Exception e) {
-					System.err.println("error while looking for the HOSTNAME argument");
-					System.err.println(USAGE);
-					return;
-				}
-				try {
-					atCommand = args[i++];
-					if (!isCommandOK(atCommand)) {
-						System.err.println("the AT command \"" + atCommand + "\" is not allowable. See your device's documentation for available commands.");
-						System.err.println(USAGE);
-						return;
-					}
-				} catch (IllegalArgumentException e) {
-					System.err.println(e.getMessage());
-					return;
-				} catch (Exception e) {
-					System.err.println("error while looking for the ATCOMMANDS argument: " + e);
-					System.err.println(USAGE);
-					return;
-				}
-				try {
-					// DATA isn't required -- check first
-					if (i < args.length) {
-						dataArg = args[i++];
-					}
-				} catch (IllegalArgumentException e) {
-					System.err.println(e.getMessage());
-					return;
-				} catch (Exception e) {
-					System.err.println("error while reading the DATA argument: " + e);
-					System.err.println(USAGE);
-					return;
-				}
-			} catch (Exception e) {
-				System.err.println("error while processing arguments");
-				System.err.println(USAGE);
-				return;
+		// get commands
+		String[] commands = null;
+		if (cmd.hasOption(COMMANDS)) {
+			if (cmd.getOptionValue(COMMANDS).equals("ALL")) {
+				commands = ALL.split(",");
+			} else {
+				commands = cmd.getOptionValue(COMMANDS).split(",");
 			}
-			
-			// TODO: Generate parameter here,
-			parameter = ATCommandHelper.encodeAT(atCommand, ATCommandHelper.parse(atCommand, dataArg));
-			
-			client = new XBeeClient((Inet4Address)Inet4Address.getByName(host));
-			client.setReadTimeout(50);
-			
-			client.sendCommandAndWait(atCommand, false, parameter);
-			if (client.containsState(atCommand)) {
-				byte[] state = client.getState(atCommand);
-				if (useHexOutput) {
-					System.out.println(new BigInteger(1, state).toString(16));
+			for (String command : commands) {
+				if (!isCommandOK(command)) {
+					System.err.println("the AT command \"" + command + "\" is not allowable. See your device's documentation for available commands.");
+					printHelp();
+					throw new InterruptedException();
+				}
+			}
+		} else {
+			System.err.println("an AT command is required.");
+			printHelp();
+			throw new InterruptedException();
+		}
+
+		
+		// get output separator
+		String separator = ",";
+		if (cmd.hasOption(SEPARATOR)) {
+			separator = cmd.getOptionValue(SEPARATOR);
+		}
+					
+		// get number of samples
+		int numSamples = 1;
+		if (cmd.hasOption(NUMBER)) {
+			numSamples = Integer.parseInt(cmd.getOptionValue(NUMBER));
+		}
+		
+		// get delay
+		int delay = 1000;
+		if (cmd.hasOption(DELAY)) {
+			delay = Integer.parseInt(cmd.getOptionValue(DELAY));
+		}
+		
+		
+		// output header
+		if (!cmd.hasOption(NO_HEADER)) {
+			if (!cmd.hasOption(NO_TIMESTAMP)) {
+				System.out.print("TIMESTAMP" + separator);
+			}
+			System.out.println(StringUtils.join(commands, separator));
+		}
+		
+		
+		// open network connection
+		XBeeClient client = new XBeeClient(host);
+		printlnIfVerbose("remote host resolved: " + host);
+		client.setReadTimeout(50);
+
+
+		// sample and output
+		for (int i = 0; i < numSamples; i++) {
+			LinkedList<String> values = new LinkedList<String>();
+
+			// sample
+			if (!cmd.hasOption(NO_TIMESTAMP)) {
+				if (cmd.hasOption(HEX)) {
+					values.add(String.format("%x", new Date().getTime()));
 				} else {
-					System.out.println(ATCommandHelper.decodeToString(atCommand, state));
+					values.add(new Date().toString() + separator);
+				}
+			}
+			for (String command : commands) {
+				client.sendCommandAndWait(command, true, null);
+				byte[] state = client.getState(command);
+				if (cmd.hasOption(HEX)) {
+					values.add(new BigInteger(1, state).toString(16));
+				} else {
+					values.add(ATCommandHelper.decodeToString(command, state));
 				}
 			}
 			
-		} catch (UnknownHostException e) {
-			System.err.println("unknown host: " + host);
-			return;
-		} catch (XBeeException e) {
-			System.err.println(e);
-			return;
+			// output
+			System.out.println(StringUtils.join(values, separator));
+			
+			// delay
+			Thread.sleep(delay);
+
 		}
 		
 	}
 	
-	private static boolean isCommandOK(String command) {
+	private boolean isCommandOK(String command) {
 		if (command.length() != 2) {
 			throw new IllegalArgumentException();
 		}

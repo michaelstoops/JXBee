@@ -1,6 +1,6 @@
 package com.stoopsartsunlimited.jxbeelib;
 
-import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Calendar;
 import java.util.Date;
@@ -24,7 +24,7 @@ import com.stoopsartsunlimited.jxbeelib.ip.XBeeIPConnection;
  */
 public class XBeeClient {
 	
-	public XBeeClient(Inet4Address remoteAddress) throws XBeeException {
+	public XBeeClient(InetAddress remoteAddress) throws XBeeException {
 		connection = new XBeeIPConnection(remoteAddress);
 	}
 	

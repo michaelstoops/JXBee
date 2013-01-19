@@ -1,8 +1,10 @@
 package com.stoopsartsunlimited.jxbeelib.ip;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +17,7 @@ public class XBeeIPConcentrator_SnoopingTest {
 
 	@Test
 	public void test() throws Throwable {
-		XBeeIPConnection connection = new XBeeIPConnection((Inet4Address) InetAddress.getByName("192.168.1.1"));
+		XBeeIPConnection connection = new XBeeIPConnection(InetAddress.getByName("192.168.1.1"));
 		XBeeIPConcentrator concentrator = XBeeIPConcentrator.getInstance();
 		NetworkSnooper ns;
 		List<InetAddress> hosts;
